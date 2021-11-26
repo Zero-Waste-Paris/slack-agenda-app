@@ -173,11 +173,11 @@ function format_userids($names, $unknown_attendees) {
     }
 }
 
-function format_number_of_attendees($attendees, $participant_number) {
+function format_number_of_attendees($attendees, $participant_number, $nbUnknownAttendees) {
     if(is_nan($participant_number)) {
         return "";
     } else {
-        return "(" . count($attendees) . " / $participant_number)";
+        return "(" . count($attendees) + $nbUnknownAttendees . " / $participant_number)";
     }
 }    
 
