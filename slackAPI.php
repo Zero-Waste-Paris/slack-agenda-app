@@ -125,7 +125,12 @@ class SlackAPI{
 
     function reminders_list() {
         $ch = $this->curl_init("https://slack.com/api/reminders.list", array('application/x-www-form-urlencoded'), "user");
-        return $this->curl_process($ch, true);
+        $response = $this->curl_process($ch, true);
+        if(!is_null($response)) {
+            return $response["reminders"];
+        } else {
+            return NULL;
+        }
     }
 
     function reminders_delete($reminder_id) {

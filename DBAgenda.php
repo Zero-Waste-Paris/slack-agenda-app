@@ -181,7 +181,6 @@ WHERE events_categories.category_id = categories.id and categories.name = '$filt
         $query->execute(array(
             'vCalendarFilename' => $event['vCalendarFilename']
         ));
-
         
         $number_volunteers_required = null;
         if(isset($vCalendar->VEVENT->CATEGORIES)) {
@@ -194,7 +193,19 @@ WHERE events_categories.category_id = categories.id and categories.name = '$filt
             }
         }
         
-        $query = $this->pdo->prepare("REPLACE INTO events (vCalendarFilename, ETag, datetime_begin, number_volunteers_required, vCalendarRaw) VALUES (:vCalendarFilename, :ETag, :datetime_begin, :number_volunteers_required, :vCalendarRaw)");
+        $query = $this->pdo->prepare("SELECT COUNT(1) FROM events WHERE vCalendarFilename = :vCalendarFilename;");
+        $query->execute(array(
+            'vCalendarFilename' =>  $event['vCalendarFilename'])
+        );
+        $result = $query->fetch(\PDO::FETCH_ASSOC);
+        
+        // prevent: Cannot delete or update a parent row: a foreign key constraint fails
+        if($result["COUNT(1)"] == 1) {
+            $query = $this->pdo->prepare("UPDATE events SET ETag = :ETag, datetime_begin = :datetime_begin, number_volunteers_required = :number_volunteers_required, vCalendarRaw = :vCalendarRaw WHERE vCalendarFilename = :vCalendarFilename;");
+        } else {
+            $query = $this->pdo->prepare("REPLACE INTO events (vCalendarFilename, ETag, datetime_begin, number_volunteers_required, vCalendarRaw) VALUES (:vCalendarFilename, :ETag, :datetime_begin, :number_volunteers_required, :vCalendarRaw);");
+        }
+        
         $query->execute(array(
             'vCalendarFilename' =>  $event['vCalendarFilename'],
             'ETag' => $event['ETag'],
@@ -307,5 +318,62 @@ WHERE events_categories.category_id = categories.id and categories.name = '$filt
     
     public function clearEvents() {
         throw new NotImplementedException();
+    }
+
+    public function addReminder(string $userid, string $vCalendarFilename, string $message, DateTimeImmutable $datetime) {
+        $now = new DateTimeImmutable();
+        if ($datetime < $now){
+            $this->log->debug("not creating the reminder for $userid because " . $datetime->format('Y-m-dTH:i:s') . " is in the past");
+        } else {
+            $response = $this->api->reminders_add($userid, "Rappel pour l'événement: $message", $datetime);
+            $this->log->debug("reminderId {$response->reminder->id}.");
+            if(!is_null($response)) {
+                $this->log->debug("reminder created");
+
+                $query = $this->pdo->prepare("INSERT INTO reminders (id, vCalendarFilename, userid) VALUES (:id, :vCalendarFilename, :userid)");
+                $query->execute(array(
+                    'id' => $response->reminder->id,
+                    'vCalendarFilename' =>  $vCalendarFilename,
+                    'userid' =>  $userid
+                ));                
+            } else {
+                $this->log->error("failed to create reminder");
+            }
+        }
+    }
+
+    public function deleteReminder(string $userid, string $vCalendarFilename, DateTimeImmutable $datetime) {
+
+        $query = $this->pdo->prepare("SELECT id FROM reminders WHERE vCalendarFilename= :vCalendarFilename AND userid = :userid;");
+        $query->execute(array(
+            'vCalendarFilename' =>  $vCalendarFilename,
+            'userid' =>  $userid
+        ));
+        $result = $query->fetch();
+        
+        if(!isset($result['id'])) {
+            $this->log->warning("Reminder does not exists in database.");
+            return;
+        }
+
+        $query = $this->pdo->prepare("DELETE FROM reminders WHERE vCalendarFilename= :vCalendarFilename AND userid = :userid;");
+        $query->execute(array(
+            'vCalendarFilename' =>  $vCalendarFilename,
+            'userid' =>  $userid
+        ));
+        
+        if(!is_null($reminder_id = $this->api->reminders_delete($result['id']))) {
+            $this->log->debug("reminder deleted ($result[id]).");
+        } else {
+            // Don't log as an error because it may be normal, for instance:
+            // - when the user deleted the reminder manually from slack
+            // - or when we did not create a reminder (for instance when the registration occurs less than 24h before the event start)
+            $this->log->info("can't find the reminder to delete  ($result[id]).");
+        }
+    }
+
+    public function purgeReminders() {
+        $query = $this->pdo->prepare("TRUNCATE TABLE reminders;");
+        $query->execute();
     }
 }

@@ -61,6 +61,13 @@ class MySQLAgenda extends DBAgenda {
 
         $query = $this->pdo->prepare("INSERT IGNORE INTO properties (property, value) VALUES ('CTag', 'NULL')");
         $query->execute();
+
+        $this->pdo->query("CREATE TABLE IF NOT EXISTS reminders ( 
+    id                              VARCHAR( 12 ),
+    vCalendarFilename               VARCHAR( 256 ),
+    userid                          VARCHAR( 11 ),
+    FOREIGN KEY (vCalendarFilename) REFERENCES events(vCalendarFilename));");
+
     }
 
     protected function getLastInsertedRowId() {

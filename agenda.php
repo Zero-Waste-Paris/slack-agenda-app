@@ -25,6 +25,10 @@ abstract class Agenda {
 
     abstract protected function getCTag();
     abstract protected function setCTag(string $CTag);
+
+    abstract public function addReminder(string $userid, string $vCalendarFilename, string $message, DateTimeImmutable $datetime);
+    abstract public function deleteReminder(string $userid, string $vCalendarFilename, DateTimeImmutable $datetime);
+    public function purgeReminders() {}
     
     public function checkAgenda() {
         $remote_CTag = $this->caldav_client->getCTag();

@@ -211,4 +211,34 @@ class FSAgenda extends Agenda {
     public function clearEvents() {
         throw new NotImplementedException();
     }
+    
+    public function addReminder(string $userid, string $vCalendarFilename, string $message, DateTimeImmutable $datetime) {
+        $now = new DateTimeImmutable();
+        if ($datetime < $now){
+            $this->log->debug("not creating the reminder for $userid because " . $datetime->format('Y-m-dTH:i:s') . " is in the past");
+        } else {
+            $response = $this->api->reminders_add($userid, "Rappel pour l'événement: $message", $datetime);
+            if(!is_null($response)) {
+                $this->log->debug("reminder created ({$response->reminder->id})");
+            } else {
+                $this->log->error("failed to create reminder");
+            }
+        }
+    }
+    
+    public function deleteReminder(string $userid, string $vCalendarFilename, DateTimeImmutable $datetime) {
+        $reminders = $this->api->reminders_list();
+        
+        if(!is_null($reminders) and
+           !is_null($reminder_id = getReminderID($reminders, $userid, $datetime)) and
+           !is_null($this->api->reminders_delete($reminder_id))
+        ) {
+            $this->log->debug("reminder deleted ($reminder_id)");
+        } else {
+            // Don't log as an error because it may be normal, for instance:
+            // - when the user deleted the reminder manually from slack
+            // - or when we did not create a reminder (for instance when the registration occurs less than 24h before the event start)
+            $this->log->info("can't find the reminder to delete.");
+        }
+    }
 }

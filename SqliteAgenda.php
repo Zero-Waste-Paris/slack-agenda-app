@@ -52,6 +52,13 @@ class SqliteAgenda extends DBAgenda {
 
         $query = $this->pdo->prepare("INSERT OR IGNORE INTO properties (property, value) VALUES ('CTag', 'NULL')");
         $query->execute();
+
+        $this->pdo->query("CREATE TABLE IF NOT EXISTS reminders ( 
+    id                              VARCHAR( 12 ) PRIMARY KEY,
+    vCalendarFilename               VARCHAR( 256 ),
+    userid                          VARCHAR( 11 ),
+    FOREIGN KEY (vCalendarFilename) REFERENCES events(vCalendarFilename));");
+        
     }
     
     protected function getLastInsertedRowId() {
@@ -59,5 +66,4 @@ class SqliteAgenda extends DBAgenda {
         $query->execute();
         return $query->fetch()['Id'];
     }
-
 }
