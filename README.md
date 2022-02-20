@@ -32,7 +32,7 @@ How to install
 
 Prerequisites: you will need
 
-* A PHP web hosting (which has php-curl)
+* A PHP web hosting which runs PHP 8 (which has php-curl)
 * A slack space for your team (of course)
 * A CalDAV server (for instance you can use google calendar)
 * PHP Composer (you can get it from [here](https://getcomposer.org/))
