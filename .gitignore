@@ -8,3 +8,6 @@ coverage
 .phpunit.result.cache
 *.bak
 venv
+deploy-config.sh
+temp_for_release
+.idea
