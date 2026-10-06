@@ -1,0 +1,46 @@
+{
+    "slack_signing_secret" : "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "slack_bot_token" : "xoxb-xxxxxxxxxxxxx-xxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
+    "slack_user_token" : "xoxp-xxxxxxxxxxxxx-xxxxxxxxxxxxx-xxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "caldav_username" : "user@server.com",
+    "caldav_password" : "xxxxxxxxxxxxxxxx",
+    "caldav_url" : "https://www.server.com/...", 
+    "error_message" : "Error, please contact your administrator.",
+    "logger_level" : "DEBUG",
+    "slash_command" : "remindEvent",
+    "salt": "<put some arbitrary string here>",
+    "error_mail_from" : "error@server.com",
+    "error_mail_to" : "dev@server.com",
+    "agenda" : {
+        // for sqlite database
+        "path" : "./database.sqlite",
+        // for MySQL database
+        "db_type" : "MySQL",
+        "db_host" : "localhost",
+        "db_name" : "slack_app",
+        "db_username" : "slack_app_user",
+        "db_password" : "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "db_table_prefix": "slack_app_"
+    },
+    "prepend_block" : {
+	"type": "section",
+	"text": {
+	    "type": "mrkdwn",
+	    "text": "Pre message"
+	}
+    },
+    "append_block" : {
+	"type": "section",
+	"text": {
+	    "type": "mrkdwn",
+	    "text": "Post message"
+	}
+    },
+    "categories": [
+         {"name": "Visioconférence", "emoji" : ":desktop_computer:"},
+	 {"name": "Urgent", "emoji" : ":warning:"},
+  	 {"name": "Nouveau bénévole", "short_name" : "NB", "emoji": ":white_circle:"},
+	 {"name": "Observateur", "short_name" : "OBS", "emoji" : ":large_blue_circle:"},
+	 {"name": "Intervenant", "short_name" : "INT", "emoji" : ":large_purple_circle:"}
+    ]
+}
