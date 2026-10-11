@@ -6,7 +6,6 @@
     "caldav_password" : "xxxxxxxxxxxxxxxx",
     "caldav_url" : "https://www.server.com/...", 
     "error_message" : "Error, please contact your administrator.",
-    "logger_level" : "DEBUG",
     "slash_command" : "remindEvent",
     "salt": "<put some arbitrary string here>",
     "error_mail_from" : "error@server.com",

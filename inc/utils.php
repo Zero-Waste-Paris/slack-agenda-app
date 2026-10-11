@@ -25,7 +25,7 @@ $MAX_LOG_FILES = 10;
 function read_config_file() {
     global $MAX_LOG_FILES;
     $log = new Logger('ConfigReader');
-    $handler = new RotatingFileHandler('app.log', $MAX_LOG_FILES, Logger::ERROR);
+    $handler = new RotatingFileHandler('app.log', $MAX_LOG_FILES, Monolog\Level::Debug);
     $log->pushHandler($handler);
 
     if(!file_exists('config.json')) {
@@ -41,17 +41,6 @@ function read_config_file() {
         exit();
     }
 
-    $levels = Logger::getLevels();
-    if(isset($config['logger_level']) and array_key_exists($config['logger_level'], $levels)) {
-        $level = $levels[$config['logger_level']];
-        $handler->setLevel($level);
-        $log->debug("Log handler switch to level $config[logger_level]");
-        $GLOBALS['LOGGER_LEVEL'] = $level;
-    } else {
-        $log->debug("Log handler INFO");
-        $GLOBALS['LOGGER_LEVEL'] = Logger::INFO;
-    }
-    
     $GLOBALS['LOG_HANDLERS'][] = $handler;
     
     if(!isset($config['slack_signing_secret']) ||
