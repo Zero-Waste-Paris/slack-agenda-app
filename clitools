@@ -24,6 +24,7 @@ require_once "inc/slackAPI.php";
 require_once "inc/utils.php";
 require_once "inc/agenda.php";
 require_once "inc/CalDAVClient.php";
+require_once "inc/Plot.php";
 
 $log = new Logger('CLITOOLS');
 $log->pushHandler(new StreamHandler('php://stdout', Logger::DEBUG));
@@ -154,31 +155,10 @@ class DatabaseConnectionChecker extends Command {
 class CSVExport extends Command {
     public function run() {
         global $log;
-        $caldav = build_caldavclient();
-        $salt = random_bytes(40);
+        $rows = fetchEventsForExport();
         $csv = "";
-        
-        foreach($caldav->fetchEvents(array_keys($caldav->getETags())) as $i => $event) {
-            
-            $vCalendar = \Sabre\VObject\Reader::read($event['vCalendarRaw']);
-            
-            $csv .= $vCalendar->VEVENT->DTSTART->getDateTime()->getTimestamp() . ";";
-            $csv .= $vCalendar->VEVENT->DTEND->getDateTime()->getTimestamp() . ";";
-
-            $attendees = [];
-            if(isset($vCalendar->VEVENT->ATTENDEE)) {
-                foreach($vCalendar->VEVENT->ATTENDEE as $attendee) {
-                    $attendees[] = anonymizeAttendee($attendee);
-                }
-            }
-            
-            $categories = [];
-            if(isset($vCalendar->VEVENT->CATEGORIES)) {
-                foreach($vCalendar->VEVENT->CATEGORIES as $category) {
-                    $categories[] = (string)$category;
-                }
-            }
-            $csv .= implode(",", $attendees) . ";" . implode(",", $categories) . "\n";
+        foreach ($rows as $row) {
+            $csv .= implode(";", $row) . "\n";
         }
         $date = new DateTimeImmutable();
         file_put_contents($date->format('Y-m-d').".csv", $csv, FILE_APPEND | LOCK_EX);
@@ -392,6 +372,35 @@ function checkAgenda() {
     $log->info("Checking Agenda - done");
 }
 
+function fetchEventsForExport(): array {
+    $caldav = build_caldavclient();
+    $rows = [];
+    foreach($caldav->fetchEvents(array_keys($caldav->getETags())) as $event) {
+        $vCalendar = \Sabre\VObject\Reader::read($event['vCalendarRaw']);
+
+        $attendees = [];
+        if(isset($vCalendar->VEVENT->ATTENDEE)) {
+            foreach($vCalendar->VEVENT->ATTENDEE as $attendee) {
+                $attendees[] = anonymizeAttendee($attendee);
+            }
+        }
+
+        $categories = [];
+        if(isset($vCalendar->VEVENT->CATEGORIES)) {
+            foreach($vCalendar->VEVENT->CATEGORIES as $category) {
+                $categories[] = (string)$category;
+            }
+        }
+        $rows[] = [
+            $vCalendar->VEVENT->DTSTART->getDateTime()->getTimestamp(),
+            $vCalendar->VEVENT->DTEND->getDateTime()->getTimestamp(),
+            implode(",", $attendees),
+            implode(",", $categories)
+        ];
+    }
+    return $rows;
+}
+
 function anonymizeAttendee($attendee) {
     $placeholderDomain = "anonymized";
     if (str_ends_with("@$attendee", $placeholderDomain)) { // Make this function idempotent
@@ -428,6 +437,7 @@ class HelpPrinter extends Command {
 
 
 $cmds = [
+    "plot" => new PlotCommand(),
     "csv-export" => new CSVExport(),
     "pseudonymize-old-caldav-data" => new PseudonymizeAttendeesDataOnCaldav(),
     "reminders-list" => new RemindersLister(),
@@ -446,8 +456,8 @@ $cmds = [
     "help" => new HelpPrinter()
 ];
 
-if (count($argv) != 2) {
-    $log->info("Expecting exactly 1 argument: the name of the command to run");
+if (count($argv) < 2) {
+    $log->info("Expecting at least 1 argument: the name of the command to run");
     $helper = new HelpPrinter();
     $helper->run();
     exit(1);
