@@ -8,9 +8,9 @@ require_once "MockCalDAVClient.php";
 require_once "testUtils.php";
 require_once "MockEvent.php";
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use function PHPUnit\Framework\assertEquals;
-use function PHPUnit\Framework\assertStringContainsString;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
@@ -62,7 +62,7 @@ final class AgendaTest extends TestCase {
           ['unknown@abc.xyz', NULL]
         ];
         $this->slackApiMock = $this->createMock(ISlackAPI::class);
-        $this->slackApiMock->method('users_lookupByEmail')->will($this->returnValueMap($mapEmailToSlackId));
+        $this->slackApiMock->method('users_lookupByEmail')->willReturnMap($mapEmailToSlackId);
     }
     private static function deleteSqliteDatabase(){
         if (file_exists(self::SQLITE_FILE)){
@@ -118,17 +118,15 @@ final class AgendaTest extends TestCase {
         $this->assertEqualEvents(array(new ExpectedParsedEvent($upcomingEvent)), $events);
     }
 
-    public function getNumberOfEventsToCheck() {
-        return array(
-            array(Agenda::EVENT_LIMIT-10),
-            array(Agenda::EVENT_LIMIT),
-            array(Agenda::EVENT_LIMIT+10)
-        );
-    }
+	public static function getNumberOfEventsToCheck() {
+		return array(
+			array(Agenda::EVENT_LIMIT-10),
+			array(Agenda::EVENT_LIMIT),
+			array(Agenda::EVENT_LIMIT+10)
+		);
+	}
     
-    /**
-     * @dataProvider getNumberOfEventsToCheck
-     */
+	#[DataProvider('getNumberOfEventsToCheck')]
     public function test_checkAgenda_with_too_many_events(int $number_of_events) {
         // Setup
         $allEvents = array();
@@ -511,13 +509,11 @@ final class AgendaTest extends TestCase {
         $sut->getParsedEvent("some_event_id", "MYID");
     }
 
-    public function returnETagAfterUpdateProvider() {
-        return array(array(true), array(false));
-    }
+	public static function returnETagAfterUpdateProvider() {
+		return array(array(true), array(false));
+	}
 
-    /**
-     * @dataProvider returnETagAfterUpdateProvider
-     */
+	#[DataProvider('returnETagAfterUpdateProvider')]
     public function test_updateAttendee_register(bool $returnETagAfterUpdate) {
         // Setup
         $event = new MockEvent(array(), array(), "Nom de l'événement");
@@ -560,9 +556,7 @@ final class AgendaTest extends TestCase {
         $this->assertEquals(0, count($caldav_client->updatedEvents));
     }
     
-    /**
-     * @dataProvider returnETagAfterUpdateProvider
-     */
+	#[DataProvider('returnETagAfterUpdateProvider')]
     public function test_updateAttendee_unregister(bool $returnETagAfterUpdate) {
         // Setup
         // // We start with an event with no participant because we'll let the agenda register it.
