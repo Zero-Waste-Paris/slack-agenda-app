@@ -102,36 +102,32 @@ class CalDAVClient implements ICalDAVClient {
      *                              Eg of use case: sometimes it is expected to get a response 412, it should hence
      *                              Not be logged as an error
      */
-    private function process_curl_request($ch, array $httpErrorCodeThatShouldNotBeLoggedAsError = array()) {
-        try {
-            $response = curl_exec($ch);
+	private function process_curl_request($ch, array $httpErrorCodeThatShouldNotBeLoggedAsError = array()) {
+		$response = curl_exec($ch);
 
-            if (curl_errno($ch)) {
-                $this->log->error(curl_error($ch) . " (error code " . curl_errno($ch) . ")");
-                return false;
-            }
+		if (curl_errno($ch)) {
+			$this->log->error(curl_error($ch) . " (error code " . curl_errno($ch) . ")");
+			return false;
+		}
 
-            $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
-            if($httpcode !== 200 && $httpcode !== 204 && $httpcode !== 207) {
-                $url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
-                $message = "Bad HTTP response code: $httpcode for $url";
-                if (! in_array($httpcode, $httpErrorCodeThatShouldNotBeLoggedAsError)) {
-                    $this->log->error($message);
-                    $trace = debug_backtrace();
-                    $this->log->error("in ({$trace[1]["function"]}).");
-                    $this->log->error($response);
-                } else {
-                    $this->log->info($message);
-                }
-                return false;
-            }
+		if($httpcode !== 200 && $httpcode !== 204 && $httpcode !== 207) {
+			$url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+			$message = "Bad HTTP response code: $httpcode for $url";
+			if (! in_array($httpcode, $httpErrorCodeThatShouldNotBeLoggedAsError)) {
+				$this->log->error($message);
+				$trace = debug_backtrace();
+				$this->log->error("in ({$trace[1]["function"]}).");
+				$this->log->error($response);
+			} else {
+				$this->log->info($message);
+			}
+			return false;
+		}
 
-            return $response;
-        } finally {
-            curl_close($ch);
-        }
-    }
+		return $response;
+	}
     
     // url that need to be fetched
     function fetchEvents($vCalendarFilenames) {

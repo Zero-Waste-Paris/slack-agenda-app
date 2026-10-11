@@ -63,7 +63,6 @@ class SlackAPI implements ISlackAPI {
         $this->log->debug("Going to perform a curl query");
         $response = curl_exec($ch);
         $this->log->debug("Completed the curl query");
-        curl_close($ch);
         $json = json_decode($response, $as_array);
 
         if(!is_null($json)) {
