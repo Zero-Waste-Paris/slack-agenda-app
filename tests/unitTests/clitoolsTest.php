@@ -14,7 +14,7 @@ final class clitoolsTest extends TestCase {
   public function test_canInvokeCliTools() {
     $exitCode = 0;
     $placeholder = array();
-    exec("../clitools help", $placeholder, $exitCode);
+    exec("php ../clitools help", $placeholder, $exitCode);
 
     $this->assertEquals($exitCode, 0);
   }

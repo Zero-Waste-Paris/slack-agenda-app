@@ -4,10 +4,10 @@ declare(strict_types=1);
 require_once("../inc/CalDAVClient.php");
 require_once("../inc/utils.php");
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
-use Monolog\Handler\NativeMailerHandler;
 
 final class CalDAVTest extends TestCase {
 
@@ -15,18 +15,14 @@ final class CalDAVTest extends TestCase {
         $GLOBALS['LOG_HANDLERS'] = array(new StreamHandler('php://stdout', Logger::DEBUG));
     }
     
-    /**
-     * @dataProvider credentialsProvider
-     */
+	#[DataProvider('credentialsProvider')]
     public function testGetCTag($username, $password, $url) {
         $client = new CalDAVClient($url, $username, $password);
         $CTag = $client->getCTag();
         $this->assertNotNull($CTag, "CTag: $CTag");
     }
     
-    /**
-     * @dataProvider credentialsProvider
-     */
+	#[DataProvider('credentialsProvider')]
     public function testGetETagAndFetchEvents($username, $password, $url) {
         $client = new CalDAVClient($url, $username, $password);
         
@@ -48,19 +44,17 @@ final class CalDAVTest extends TestCase {
         }
     }
     
-    /**
-     * @dataProvider credentialsProvider
-     */
+	#[DataProvider('credentialsProvider')]
     public function testUpdateEvent($username, $password, $url) {
         $client = new CalDAVClient($url, $username, $password);
         $ETags = $client->getETags();
-        
+
         $this->assertNotNull($ETags);
         foreach($ETags as $vCalendarFilename => $ETag) {
             $events = $client->fetchEvents(array(basename($vCalendarFilename)));
             $this->assertCount(1, $events);
             $event = $events[0];
-            
+
             $this->assertTrue($event['vCalendarFilename'] === basename($vCalendarFilename));
 
             $new_ETag = $client->updateEvent(basename($vCalendarFilename), $ETag, $event['vCalendarRaw']);
@@ -68,11 +62,16 @@ final class CalDAVTest extends TestCase {
         }
     }
     
-    public function credentialsProvider() {
-        $raw = file_get_contents("credentials.json");
-        $this->assertNotNull($raw);
+    public static function credentialsProvider() {
+		$configFile = "credentials.json";
+        $raw = file_get_contents($configFile);
+		if ($raw === false) {
+			throw new Exception("couldn't open the file $configFile");
+		}
         $credentials = json_decode($raw, true);
-        $this->assertNotNull($credentials);
+		if (is_null($credentials)) {
+			throw new Exception("Couldn't read the file $configFile");
+		}
         return $credentials["credentials"];
     }
 }
